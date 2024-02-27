@@ -1,0 +1,10 @@
+click==8.1.7
+colorama==0.4.6
+distlib==0.3.7
+filelock==3.12.2
+gunicorn==21.2.0
+h11==0.14.0
+packaging==23.2
+platformdirs==3.9.1
+uvicorn==0.27.1
+virtualenv==20.24.1

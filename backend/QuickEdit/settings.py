@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     'textExtractor',
     'fileConverter',
     'linkShortener',
+    
+    'django_celery_beat'
 
 ]
 
