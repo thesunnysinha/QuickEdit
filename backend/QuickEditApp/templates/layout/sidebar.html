@@ -1,0 +1,38 @@
+{% load static %}
+
+<div id="sidebar-wrapper">
+    <div class="company-name">
+        <h2><a href="{% url 'dashboard' %}">QuickEdit</a></h2>
+    </div>
+    <div class="sidebar-search-bar">
+        <input type="text" id="searchInput" placeholder="Search...">
+    </div>
+    <ul class="sidebar-nav" id="sidebarList">
+        <li><a href="{% url 'grayscale_conversion' %}">Grayscaling</a></li>
+        <li><a href="{% url 'imageEnhancement' %}">Automated Image Smoothing/Enhancement</a></li>
+        <li><a href="{% url 'edgeDetection' %}">Edge Detection</a></li>
+        <li><a href="{% url 'skewCorrection' %}">Skew Correction</a></li>
+        <li><a href="{% url 'textExtractor' %}">Text Extractor</a></li>
+        <li><a href="{% url 'fileConverter' %}">File Converter</a></li>
+        <li><a href="{% url 'shorten_url' %}">Link Shortener</a></li>
+        <li><a href="#">Image Compression</a></li>
+        <li><a href="#">Image Effect Filters</a></li>
+        <li><a href="#">Face Detection</a></li>
+        <li><a href="#">Image to Text Conversion</a></li>
+        <li><a href="#">Watermarking</a></li>
+        <li><a href="#">Image Orientation</a></li>
+        <li><a href="#">Background Removal</a></li>
+        <li><a href="#">Auto Contrast</a></li>
+        <li><a href="#">Pose Recognition</a></li>
+        <li><a href="#">Image Merging</a></li>
+        <li><a href="#">Image Splitting</a></li>
+        <li><a href="#">Image Perspective Crop</a></li>
+        <li><a href="#">Bar-Code / QR Scanner-Generator</a></li>
+        <li><a href="#">Automation for Correcting Image Exposure/Rotation</a></li>
+        <li><a href="#">Image Texture</a></li>
+        <li><a href="#">Signature Extraction</a></li>
+        <li><a href="#">Cartoonizing Image</a></li>
+    </ul>
+</div>
+
+

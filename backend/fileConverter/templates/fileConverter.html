@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}File Converter{% endblock %}
+
+{% block css %}
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .result-file {
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="card container mt-5">
+        <h2 class="text-center">File Converter</h2>
+        <form id="upload-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="file-input">Select a file:</label>
+                <input type="file" id="file-input" class="form-control-file" required>
+            </div>
+            <div id="format-section" class="form-group hidden">
+                <label for="conversion-format">Choose desired format:</label>
+                <select id="conversion-format" class="form-control">
+                    <!-- Options will be added dynamically using JavaScript -->
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Convert File</button>
+        </form>
+
+        <div id="result-section" class="hidden">
+            <hr>
+            <h3 class="text-center">Converted File</h3>
+            <div id="converted-file" class="result-file">
+                <!-- The download link will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Loading spinner -->
+        <div id="image-loading-section" class="hidden text-center">
+            <div class="spinner-border text-primary mt-3" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p class="mt-2">Converting file...</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    <script>
+        function getCSRFToken() {
+            const csrfTokenInput = document.querySelector("input[name=csrfmiddlewaretoken]");
+            return csrfTokenInput ? csrfTokenInput.value : "";
+        }
+
+        // Show loading spinner and hide result section
+        function showLoading() {
+            const loadingSection = document.getElementById("image-loading-section");
+            const resultSection = document.getElementById("result-section");
+
+            loadingSection.classList.remove("hidden");
+            resultSection.classList.add("hidden");
+        }
+
+        // Hide loading spinner and show result section
+        function hideLoading() {
+            const loadingSection = document.getElementById("image-loading-section");
+            const resultSection = document.getElementById("result-section");
+
+            loadingSection.classList.add("hidden");
+            resultSection.classList.remove("hidden");
+        }
+
+        function updateConversionFormat() {
+            const fileInput = document.getElementById("file-input");
+            const selectedFormat = fileInput.files[0].type.split('/')[1];
+            const conversionFormat = document.getElementById("conversion-format");
+            conversionFormat.innerHTML = "";
+
+            const formats = [
+                { name: "pdf", label: "PDF" },
+                { name: "text", label: "Text" },
+                { name: "jpg", label: "JPG" },
+                { name: "jpeg", label: "JPEG" },
+                { name: "png", label: "PNG" },
+                // Add more format options as needed
+            ];
+
+            for (const format of formats) {
+                console.log(selectedFormat);
+                console.log(format.name);
+                if (format.name !== selectedFormat) {
+                    const option = document.createElement("option");
+                    option.value = format.name;
+                    option.textContent = format.label;
+                    conversionFormat.appendChild(option);
+                }
+            }
+
+            const formatSection = document.getElementById("format-section");
+            formatSection.classList.remove("hidden");
+        }
+
+        document.getElementById("file-input").addEventListener("change", updateConversionFormat);
+
+        document.getElementById("upload-form").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById("file-input");
+            const selectedFormat = document.getElementById("conversion-format").value;
+
+            showLoading();
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("format", selectedFormat);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "{% url 'fileConverter' %}", true);
+
+            xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        showResult(response.download_link);
+                    } else {
+                        alert("An error occurred during file conversion.");
+                    }
+                    hideLoading(); // Hide loading spinner after processing
+                }
+            };
+
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable) {
+                    const progress = (event.loaded / event.total) * 100;
+                    console.log("Upload progress: " + progress.toFixed(2) + "%");
+                }
+            };
+
+            xhr.send(formData);
+        });
+
+        function showResult(downloadLink) {
+            const resultSection = document.getElementById("result-section");
+            const convertedFile = document.getElementById("converted-file");
+
+            // Create a link for the user to download the converted file
+            const downloadLinkElement = document.createElement("a");
+            downloadLinkElement.href = downloadLink;
+            downloadLinkElement.textContent = "Download Converted File";
+            downloadLinkElement.className = "btn btn-success btn-block";
+            downloadLinkElement.setAttribute("download", "converted_file");
+            downloadLinkElement.style.marginTop = "10px";
+
+            // Clear previous results
+            while (convertedFile.firstChild) {
+                convertedFile.removeChild(convertedFile.firstChild);
+            }
+
+            // Append the new download link to the converted file container
+            convertedFile.appendChild(downloadLinkElement);
+
+            resultSection.style.display = "block";
+        }
+    </script>
+{% endblock %}

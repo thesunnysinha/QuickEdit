@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}QuickEdit{% endblock %}</title>
+    <!-- Add your CSS and JavaScript links here -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+
+    <!-- Add Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+
+    <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+    {% block css %}{% endblock %}
+  </head>
+  <body>
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <div id="sidebar" class="sidebar">
+        {% include 'layout/sidebar.html' %}
+      </div>
+
+      <!-- Navbar -->
+      <div id="header" class="header">{% include 'layout/header.html' %}</div>
+
+      <!-- Main Content -->
+      <div id="content" class="content">
+        <!-- Main content goes here -->
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+
+    <div id="footer" class="footer">{% include 'layout/footer.html' %}</div>
+
+    <!-- JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <!-- Add Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script
+      src="https://code.jquery.com/jquery-3.6.0.min.js"
+      integrity="sha256-oap7zIUC3t4zneHqP7tB22A2N36D8IhqAqRyA1mL5D4="
+      crossorigin="anonymous"
+    ></script>
+    {% block javascript %}{% endblock %}
+  </body>
+</html>

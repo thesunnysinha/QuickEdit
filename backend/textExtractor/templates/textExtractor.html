@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Text Extractor{% endblock %}
+{% block css %}
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="image-tab" data-toggle="tab" href="#image" type="button" role="tab" aria-controls="image" aria-selected="true">Image to Text</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="pdf-tab" data-toggle="tab" href="#pdf" type="button" role="tab" aria-controls="pdf" aria-selected="false">PDF to Text</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+        <!-- Image to Text Tab -->
+        <div class="tab-pane fade show active" id="image" role="tabpanel" aria-labelledby="image-tab">
+            <div class="container mt-5">
+                <h2 class="text-center">Extract Text from Image</h2>
+                <form id="image-upload-form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="image-input">Select an image:</label>
+                        <input type="file" id="image-input" class="form-control-file" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Upload and Extract Text</button>
+                </form>
+
+                <div id="image-result-section" class="hidden">
+                    <hr>
+                    <div class="img-container">
+                        <h3 class="text-center">Extracted Text</h3>
+                        <textarea id="extracted-text" class="form-control" rows="6" readonly></textarea>
+                    </div>
+                    <button id="copy-btn" class="btn btn-success btn-block">Copy Text</button>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="image-loading-section" class="hidden text-center">
+                    <div class="spinner-border text-primary mt-3" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Converting to text...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF to Text Tab -->
+        <div class="tab-pane fade" id="pdf" role="tabpanel" aria-labelledby="pdf-tab">
+            <div class="container mt-5">
+                <h2 class="text-center">Extract Text from PDF</h2>
+                <form id="pdf-upload-form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="pdf-input">Select a PDF file:</label>
+                        <input type="file" id="pdf-input" class="form-control-file" accept="application/pdf" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Upload and Extract Text</button>
+                </form>
+
+                <div id="pdf-result-section" class="hidden">
+                    <hr>
+                    <div class="img-container">
+                        <h3 class="text-center">Extracted Text</h3>
+                        <textarea id="pdf-extracted-text" class="form-control" rows="6" readonly></textarea>
+                    </div>
+                    <button id="pdf-copy-btn" class="btn btn-success btn-block">Copy Text</button>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="pdf-loading-section" class="hidden text-center">
+                    <div class="spinner-border text-primary mt-3" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Converting to text...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function validateImage(file) {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        const maxSizeMB = 1;
+
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please upload a JPG, JPEG, or PNG image.');
+            return false;
+        }
+
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            alert('File size should be up to 1 MB.');
+            return false;
+        }
+
+        return true;
+    }
+
+    function validatePDF(file) {
+        const allowedType = 'application/pdf';
+        const maxSizeMB = 5;
+
+        if (file.type !== allowedType) {
+            alert('Please upload a PDF file.');
+            return false;
+        }
+
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            alert('File size should be up to 5 MB.');
+            return false;
+        }
+
+        return true;
+    }
+
+    function getCSRFToken() {
+        const csrfTokenInput = document.querySelector("input[name=csrfmiddlewaretoken]");
+        return csrfTokenInput ? csrfTokenInput.value : "";
+    }
+
+    // Show loading spinner and hide result section
+    function showLoading() {
+        const loadingSection = document.getElementById("image-loading-section");
+        const resultSection = document.getElementById("image-result-section");
+
+        loadingSection.classList.remove("hidden");
+        resultSection.classList.add("hidden");
+    }
+
+    // Hide loading spinner and show result section
+    function hideLoading() {
+        const loadingSection = document.getElementById("image-loading-section");
+        const resultSection = document.getElementById("image-result-section");
+
+        loadingSection.classList.add("hidden");
+        resultSection.classList.remove("hidden");
+    }
+
+    // Add event listeners for form submissions
+    document.getElementById("image-upload-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const imageInput = document.getElementById("image-input");
+        const imageFile = imageInput.files[0];
+
+        if (!validateImage(imageFile)) {
+            return;
+        }
+
+        showLoading();
+
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "{% url 'textExtractor' %}", true);
+
+        xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    showResult(response.extracted_text);
+                } else {
+                    alert("An error occurred during image processing.");
+                }
+                hideLoading(); // Hide loading spinner after processing
+            }
+        };
+
+        xhr.upload.onprogress = function (event) {
+            if (event.lengthComputable) {
+                const progress = (event.loaded / event.total) * 100;
+                console.log("Upload progress: " + progress.toFixed(2) + "%");
+            }
+        };
+
+        xhr.send(formData);
+    });
+
+    document.getElementById("pdf-upload-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const pdfInput = document.getElementById("pdf-input");
+        const pdfFile = pdfInput.files[0];
+
+        if (!validatePDF(pdfFile)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("pdf", pdfFile);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "{% url 'pdfTextExtractor' %}", true);
+
+        xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    showPDFResult(response.extracted_text);
+                } else {
+                    alert("An error occurred during PDF processing.");
+                }
+            }
+        };
+
+        xhr.upload.onprogress = function (event) {
+            if (event.lengthComputable) {
+                const progress = (event.loaded / event.total) * 100;
+                console.log("Upload progress: " + progress.toFixed(2) + "%");
+            }
+        };
+
+        xhr.send(formData);
+    });
+
+    function showResult(extractedText) {
+        const extractedTextField = document.getElementById("extracted-text");
+        const resultSection = document.getElementById("image-result-section");
+        const copyBtn = document.getElementById("copy-btn");
+
+        extractedTextField.value = extractedText;
+        resultSection.classList.remove("hidden");
+
+        copyBtn.addEventListener("click", function () {
+            extractedTextField.select();
+            document.execCommand("copy");
+            alert("Text copied to clipboard!");
+        });
+    }
+
+    function showPDFResult(extractedText) {
+        const extractedTextField = document.getElementById("pdf-extracted-text");
+        const resultSection = document.getElementById("pdf-result-section");
+        const copyBtn = document.getElementById("pdf-copy-btn");
+
+        extractedTextField.value = extractedText;
+        resultSection.classList.remove("hidden");
+
+        copyBtn.addEventListener("click", function () {
+            extractedTextField.select();
+            document.execCommand("copy");
+            alert("Text copied to clipboard!");
+        });
+    }
+</script>
+{% endblock %}
+

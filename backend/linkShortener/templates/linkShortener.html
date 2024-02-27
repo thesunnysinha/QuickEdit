@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Link Shortener{% endblock %}
+{% block css %}
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="card container mt-5">
+        <h2 class="text-center">Link Shortener</h2>
+        <form id="link-shorten-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="long-url-input">Enter your long URL:</label>
+                <input type="url" id="long-url-input" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Shorten URL</button>
+        </form>
+
+        <div id="shortened-url-section" class="hidden">
+            <hr>
+            <div class="shortened-url-container">
+                <h3 class="text-center">Shortened URL</h3>
+                <input id="shortened-url" class="form-control" readonly>
+            </div>
+            <button id="copy-btn" class="btn btn-success btn-block">Copy URL</button>
+        </div>
+
+        <!-- Loading spinner -->
+        <div id="url-shorten-loading-section" class="hidden text-center">
+            <div class="spinner-border text-primary mt-3" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p class="mt-2">Shortening URL...</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function getCSRFToken() {
+        const csrfTokenInput = document.querySelector("input[name=csrfmiddlewaretoken]");
+        return csrfTokenInput ? csrfTokenInput.value : "";
+    }
+
+    // Show loading spinner and hide result section
+    function showLoading() {
+        const loadingSection = document.getElementById("url-shorten-loading-section");
+        const resultSection = document.getElementById("shortened-url-section");
+
+        loadingSection.classList.remove("hidden");
+        resultSection.classList.add("hidden");
+    }
+
+    // Hide loading spinner and show result section
+    function hideLoading() {
+        const loadingSection = document.getElementById("url-shorten-loading-section");
+        const resultSection = document.getElementById("shortened-url-section");
+
+        loadingSection.classList.add("hidden");
+        resultSection.classList.remove("hidden");
+    }
+
+    // Add event listener for form submission
+    document.getElementById("link-shorten-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const longUrlInput = document.getElementById("long-url-input");
+        const longUrl = longUrlInput.value.trim();
+
+        if (!longUrl) {
+            alert("Please enter a valid URL.");
+            return;
+        }
+
+        showLoading();
+
+        const formData = new FormData();
+        formData.append("long_url", longUrl);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "{% url 'shorten_url' %}", true);
+
+        xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    showShortenedURL(response.short_url);
+                } else {
+                    alert("An error occurred while shortening the URL.");
+                }
+                hideLoading(); // Hide loading spinner after processing
+            }
+        };
+
+        xhr.send(formData);
+    });
+
+    function showShortenedURL(shortenedURL) {
+        const shortenedUrlField = document.getElementById("shortened-url");
+        const resultSection = document.getElementById("shortened-url-section");
+        const copyBtn = document.getElementById("copy-btn");
+
+        shortenedUrlField.value = shortenedURL;
+        resultSection.classList.remove("hidden");
+
+        copyBtn.addEventListener("click", function () {
+            shortenedUrlField.select();
+            document.execCommand("copy");
+            alert("URL copied to clipboard!");
+        });
+    }
+
+</script>
+{% endblock %}
